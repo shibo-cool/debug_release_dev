@@ -21,6 +21,10 @@ public class MainActivity extends AppCompatActivity {
                 return false;// 返回false
             }
         });
-        webview.loadUrl("http://www.baidu.com/");
+        if(BuildConfig.DEBUG) {
+            webview.loadUrl("http://www.baidu.com/");
+        }else{
+            webview.loadUrl("http://www.qq.com/");
+        }
     }
 }
