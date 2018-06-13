@@ -6,18 +6,16 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.example.administrator.myapplication.adapter.TabFragmentPagerAdapter;
 import com.example.administrator.myapplication.fragment.FragmentMy;
 import com.example.administrator.myapplication.fragment.FragmentWebView;
+import com.example.administrator.myapplication.viewPager.NoScrollViewPager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView menu_my;
     private TextView menu_line_up_txt;
     private TextView menu_my_txt;
-    private ViewPager mViewPager;
+    private NoScrollViewPager mViewPager;
     private List<Fragment> mList;
     private FragmentWebView webviewFragment;
     private FragmentMy myFragment;
@@ -90,7 +88,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void init(){
 
-        mViewPager = findViewById(R.id.viewPager);
+        mViewPager = (NoScrollViewPager)findViewById(R.id.viewPager);
+        mViewPager.setisCanScroll(false);
         fm = getSupportFragmentManager();
         ft = fm.beginTransaction();
         webviewFragment = new FragmentWebView();
