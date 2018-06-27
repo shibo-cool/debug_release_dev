@@ -1,19 +1,8 @@
 package com.example.administrator.myapplication.fragment;
 
-import android.app.Activity;
-import android.app.FragmentTransaction;
-import android.app.Instrumentation;
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.util.Log;
+import android.os.Handler;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -26,29 +15,35 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.example.administrator.myapplication.BuildConfig;
-import com.example.administrator.myapplication.MainActivity;
 import com.example.administrator.myapplication.R;
+import com.example.administrator.myapplication.refreshWebview.Refresh;
+import com.example.administrator.myapplication.refreshWebview.RefreshLayout;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
 public class FragmentWebView extends BaseFragment {
 
-    private WebView webview;
     private View view;
     private ProgressBar progressbar;
     private EditText et;
     private ImageButton back;
     private LinearLayout error;
 
+//    private PtrClassicFrameLayout mPtrFrame;
+    private WebView mWebView;
+
+    /**
+     * 若是需要设置一下功能 可在DavidWebView中进行设置
+     */
+
     private void url(){//打包时选择debug或者release包
         if(BuildConfig.DEBUG) {
-            webview.loadUrl("http://www.baidu.com/");
+            mWebView.loadUrl("http://www.baidu.com/");
         }else{
-            webview.loadUrl("http://www.qq.com/");
+            mWebView.loadUrl("http://www.qq.com/");
         }
     }
 
@@ -56,18 +51,29 @@ public class FragmentWebView extends BaseFragment {
     public View initView() {
         if (view == null) {
             view = View.inflate(mActivity, R.layout.fragment_webview, null);
-            webview = (WebView) view.findViewById(R.id.webview);
+            mWebView = (WebView)view.findViewById(R.id.webview);
+//            mPtrFrame = (PtrClassicFrameLayout) view.findViewById(R.id.rotate_header_web_view_frame);
+
             error = (LinearLayout)view.findViewById(R.id.error);
+            error.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {//断网后重新联网点击之后回到正常界面重新加载网页
+                    mWebView.setVisibility(VISIBLE);
+                    error.setVisibility(GONE);
+                    mWebView.reload();
+                }
+            });
+
             url();//加载网页
 
-            webview.setOnKeyListener(new View.OnKeyListener() {
+            mWebView.setOnKeyListener(new View.OnKeyListener() {
                 @Override
                 public boolean onKey(View v, int keyCode, KeyEvent event) {//手机返回键回退功能实现
                     if(event.getAction() == KeyEvent.ACTION_DOWN){
                         if(keyCode == KeyEvent.KEYCODE_BACK){
                             //这里处理返回事件
-                            if(webview.canGoBack()){
-                                webview.goBack();
+                            if(mWebView.canGoBack()){
+                                mWebView.goBack();
                                 return true;
                             }
                         }
@@ -80,20 +86,20 @@ public class FragmentWebView extends BaseFragment {
             back.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    webview.goBack();
+                    mWebView.goBack();
                 }
             });//UI返回键返回功能实现
 
-            webview.getSettings().setJavaScriptEnabled(true);// 首先设置支持JS脚本
-            webview.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);//不要缓存
-            webview.getSettings().setLoadWithOverviewMode(true);//缩放至屏幕大小
+            mWebView.getSettings().setJavaScriptEnabled(true);// 首先设置支持JS脚本
+            mWebView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);//不要缓存
+            mWebView.getSettings().setLoadWithOverviewMode(true);//缩放至屏幕大小
             progressbar = (ProgressBar)view.findViewById(R.id.progress1);
             WebChromeClient wvcc = new WebChromeClient() {
                 @Override
-                public void onProgressChanged(WebView view, int newProgress) {//设置进度条
+                public void onProgressChanged(WebView view, int newProgress) {//设置加载网页进度条
                     super.onProgressChanged(view, newProgress);
                     if (newProgress == 100) {
-                        progressbar.setVisibility(GONE);
+                        progressbar.setVisibility(GONE);//加载完毕时进度条隐藏
                     } else {
                         if (progressbar.getVisibility() == GONE)
                             progressbar.setVisibility(VISIBLE);
@@ -102,19 +108,32 @@ public class FragmentWebView extends BaseFragment {
                     super.onProgressChanged(view, newProgress);
                 }
             };
-            webview.setWebChromeClient(wvcc);//进度条的实现
-            webview.setWebViewClient(new WebViewClient() {//使接下来的所有网页都在这个窗口中打开
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                    return false;// 返回false
-                }
-
+            mWebView.setWebChromeClient(wvcc);//进度条的实现
+            mWebView.setWebViewClient(new WebViewClient() {//使接下来的所有网页都在这个窗口中打开
                 @Override
                 public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error1) {
                     super.onReceivedError(view, request, error1);
-                    webview.setVisibility(GONE);
+                    mWebView.setVisibility(GONE);
                     error.setVisibility(VISIBLE);
                 }
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                    if(url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+//                @Override
+//                public void onPageFinished(WebView view, String url) {
+//                    new Handler().postDelayed(new Runnable() {
+//
+//                        @Override
+//                        public void run() {
+//                            mPtrFrame.refreshComplete();
+//                        }
+//                    }, 1000);
+//                }
             });// 设置webview的客户端
 
             et = (EditText)view.findViewById(R.id.edit);
@@ -123,34 +142,68 @@ public class FragmentWebView extends BaseFragment {
                 public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {//根据用户输入的网址加载网页
                     if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                         final String url_1 = et.getText().toString();
-                        webview.loadUrl("http://"+url_1);
+                        mWebView.loadUrl("http://"+url_1);
                     }
                     return false;
                 }
             });
         }
+
+        final RefreshLayout refreshLayout = (RefreshLayout) view.findViewById(R.id.refreshLayout);
+        if (refreshLayout != null) {
+            // 刷新状态的回调
+            refreshLayout.setRefreshListener(new RefreshLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    // 延迟3秒后刷新成功
+                    refreshLayout.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            refreshLayout.refreshComplete();
+                            mWebView.reload();
+                        }
+                    }, 3000);
+                }
+            });
+        }
+        Refresh header  = new Refresh(getActivity());
+        refreshLayout.setRefreshHeader(header);
+        refreshLayout.autoRefresh();
+//        mPtrFrame.setLastUpdateTimeRelateObject(this);
+//        mPtrFrame.setPtrHandler(new PtrHandler() {
+//            @Override
+//            public boolean checkCanDoRefresh(PtrFrameLayout frame, View content, View header) {
+//                return PtrDefaultHandler.checkContentCanBePulledDown(frame, mWebView, header);
+//            }
+//            @Override
+//            public void onRefreshBegin(PtrFrameLayout frame) {
+//                updateData();
+//            }
+//        });
+//        mPtrFrame.setResistance(1.7f);
+//        mPtrFrame.setRatioOfHeaderHeightToRefresh(1.2f);
+//        mPtrFrame.setDurationToClose(200);
+//        mPtrFrame.setDurationToCloseHeader(1000);
+//        mPtrFrame.setPullToRefresh(false);
+//        mPtrFrame.setKeepHeaderWhenRefresh(true);
+//
+//        mPtrFrame.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                mPtrFrame.autoRefresh();
+//            }
+//        }, 1000);
+
         return view;
     }
-//    public boolean onKeyDown(int keyCode, KeyEvent event) {
-//        if ((keyCode == KeyEvent.KEYCODE_BACK)&&webview.canGoBack()) {
-//            if(webview.getOriginalUrl() == getOriginalUrl()){
-//                webview.goBack();//返回上一页面
-//            }
-//            else {
-//                webview.loadUrl(getOriginalUrl());
-//            }
-//            return true;
-//        }
-//        return super.onKeyDown(keyCode, event);
-//    }//手机返回键
 
     public void onKeyDown(int keyCode, KeyEvent event) {
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && webview.canGoBack()) {
-            if(webview.getOriginalUrl() == getOriginalUrl()) {
-                webview.goBack(); //goBack()表示返回WebView的上一页面
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && mWebView.canGoBack()) {
+            if(mWebView.getOriginalUrl() == getOriginalUrl()) {
+                mWebView.goBack(); //goBack()表示返回WebView的上一页面
             }
             else{
-                webview.loadUrl(getOriginalUrl());
+                mWebView.loadUrl(getOriginalUrl());
             }
         }
     }//手机返回键
@@ -164,5 +217,8 @@ public class FragmentWebView extends BaseFragment {
             ret = "http://www.qq.com/";
         }
         return ret;
+    }
+    private void updateData() {
+        mWebView.reload();
     }
 }

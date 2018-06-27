@@ -13,6 +13,7 @@ import com.example.administrator.myapplication.R;
 import com.example.administrator.myapplication.my_item.item_photo;
 import com.example.administrator.myapplication.my_item.item_text;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,11 @@ public class MyTextAdapter extends BaseAdapter {
     public MyTextAdapter(Context context, List<item_text> list){
         this.context = context;
         this.list = list;
+    }
+
+    public void onDateChange(List<item_text> list) {
+        this.list = list;
+        this.notifyDataSetChanged();
     }
 
     @Override
@@ -83,9 +89,7 @@ public class MyTextAdapter extends BaseAdapter {
             else{
                 Glide.with(util.photo_right).load(((item_photo)list.get(position)).getPath()).into(util.photo_right);
             }
-
         }
-
         return view;
     }
 }

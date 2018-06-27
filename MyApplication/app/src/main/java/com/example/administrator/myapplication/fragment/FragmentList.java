@@ -1,15 +1,15 @@
 package com.example.administrator.myapplication.fragment;
 
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -19,58 +19,83 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
 import com.example.administrator.myapplication.R;
 import com.example.administrator.myapplication.adapter.MyTextAdapter;
 import com.example.administrator.myapplication.my_item.item_photo;
 import com.example.administrator.myapplication.my_item.item_text;
+import com.example.administrator.myapplication.refreshListview.LoadListView;
+import com.example.administrator.myapplication.refreshListview.RefreshListLayout;
+import com.example.administrator.myapplication.refreshListview.RefreshListView;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class FragmentMy extends BaseFragment{
+public class FragmentList extends BaseFragment {
+
     private View view;
-    private ListView textlistview;
+    private LoadListView listview;
     private List<item_text> list1 = new ArrayList<item_text>();
-    private MyTextAdapter myTextAdapter;
-    private ImageButton add;
+    private MyTextAdapter adapter;
     private View mPopupRootView,tPopupRootView;
-    private String TAG = "FragmentMy";
-    private ImageView item_photo_right;
+    private ImageButton add;
     private String path;
-//    private photoPopupwindow photo_popupWindow;
+    private String TAG = "FragmentList";
 
     @Override
     protected View initView() {
         if (view == null) {
             view = View.inflate(mActivity, R.layout.fragment_my, null);
-            textlistview = (ListView)view.findViewById(R.id.my_listview_text);
-            item_photo_right = (ImageView)view.findViewById(R.id.photo_right);
+            listview = view.findViewById(R.id.my_listview_text);
+            adapter = new MyTextAdapter(getActivity(),list1);
+            listview.setAdapter(adapter);
             init();
-            //装载R.layout.popup对应的界面布局
-
             initadd();
-//            initPopupWindow();
-            myTextAdapter = new MyTextAdapter(getActivity(),list1);
-            textlistview.setAdapter(myTextAdapter);
+            refresh();
+            listview.setOnLoadMoreListener(new LoadListView.OnLoadMoreListener() {
+                @Override
+                public void onloadMore() {
+                    loadMore();
+                }
+            });
         }
         return view;
     }
+    private void init() {
+        item_photo head = new item_photo();
+        head.setphoto_left("头像");
+        head.setType(1);
+        head.setphoto_right(R.mipmap.dc_dj_picking_img_portrait);
+        list1.add(head);
 
-    private void initadd() {
+        item_text name = new item_text();
+        item_text department = new item_text();
+        item_text position = new item_text();
+        item_text phone = new item_text();
+        name.settext_left("姓名");
+        name.settext_right("李立昱");
+        department.settext_left("部门");
+        department.settext_right("股东/天虹商场股份有限公司/君尚3019/超市部");
+        position.settext_left("职位");
+        position.settext_right("商场营业员");
+        phone.settext_left("手机号码");
+        phone.settext_right("18822689080");
+        list1.add(name);
+        list1.add(department);
+        list1.add(position);
+        list1.add(phone);
+    }
+    private void initadd(){
         mPopupRootView = this.getLayoutInflater().inflate(R.layout.photo_dialog, null);
         tPopupRootView = this.getLayoutInflater().inflate(R.layout.text_dialog, null);
         add = (ImageButton) view.findViewById(R.id.my_add);
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final PopupWindow popup = new PopupWindow(mPopupRootView,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
+                final PopupWindow popup = new PopupWindow(mPopupRootView, ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                 popup.setFocusable(true);//使这个弹窗可以调用软键盘
                 final PopupWindow popup_1 = new PopupWindow(tPopupRootView,ViewGroup.LayoutParams.WRAP_CONTENT,ViewGroup.LayoutParams.WRAP_CONTENT);
                 popup_1.setFocusable(true);//同上
@@ -89,7 +114,7 @@ public class FragmentMy extends BaseFragment{
                 mPopupRootView.findViewById(R.id.photo_dialog_pickture).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {//点击选择图片
-                        Toast.makeText(getActivity(),"请选择图片",Toast.LENGTH_SHORT).show();
+//                        Toast.makeText(getActivity(),"请选择图片",Toast.LENGTH_SHORT).show();
                         // 打开本地相册
                         Intent i = new Intent(Intent.ACTION_PICK,android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                         // 设定结果返回
@@ -108,9 +133,8 @@ public class FragmentMy extends BaseFragment{
                         a.setType(1);
                         a.setPath(path);
                         list1.add(a);
-                        if(myTextAdapter != null){
-                            myTextAdapter.notifyDataSetChanged();
-
+                        if(adapter != null){
+                            adapter.notifyDataSetChanged();
                         }
                     }
                 });
@@ -135,9 +159,8 @@ public class FragmentMy extends BaseFragment{
                         text_txt.settext_left(txt_left);
                         text_txt.settext_right(txt_right);
                         list1.add(text_txt);
-                        if(myTextAdapter != null){
-                            myTextAdapter.notifyDataSetChanged();
-
+                        if(adapter != null){
+                            adapter.notifyDataSetChanged();
                         }
                     }
                 });
@@ -145,7 +168,6 @@ public class FragmentMy extends BaseFragment{
                 mWindowDialog.setContentView(root_1);
                 Window dialogWindow = mWindowDialog.getWindow();
                 dialogWindow.setGravity(Gravity.BOTTOM);
-//        dialogWindow.setWindowAnimations(R.style.dialogstyle); // 添加动画
                 WindowManager.LayoutParams lp = dialogWindow.getAttributes(); // 获取对话框当前的参数值
                 lp.x = 0; // 新位置X坐标
                 lp.y = 0; // 新位置Y坐标
@@ -158,17 +180,49 @@ public class FragmentMy extends BaseFragment{
             }
         });
     }
+    private void refresh(){
+        final RefreshListLayout refreshLayout = (RefreshListLayout) view.findViewById(R.id.refreshListLayout);
+        if (refreshLayout != null) {
+            // 刷新状态的回调
+            refreshLayout.setRefreshListener(new RefreshListLayout.OnRefreshListener() {
+                @Override
+                public void onRefresh() {
+                    // 延迟3秒后刷新成功
+                    refreshLayout.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            refreshLayout.refreshComplete();
+                            if (listview != null) {
+                                for(int i=0;i<list1.size();i++){
+                                    item_text info = list1.get(i);
+                                    if (info != null && info.gettext_left() == "接下来写什么好呢") {
+                                        list1.remove(i);
+                                        run();
+                                    }
+                                }
+//                                listview.setAdapter(new MyTextAdapter(getActivity(),list1));
+                                showList(list1);
+                            }
+                        }
+                    }, 3000);
+                }
+            });
+        }
+        RefreshListView header  = new RefreshListView(getActivity());
+        refreshLayout.setRefreshHeader(header);
+        refreshLayout.autoRefresh();
+    }
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    // TODO Auto-generated method stub
+        // TODO Auto-generated method stub
         super.onActivityResult(requestCode, resultCode, data);
+//        Toast.makeText(getActivity(),"这个呢",Toast.LENGTH_SHORT).show();
         //打开相册并选择照片，这个方式选择单张
         // 获取返回的数据，这里是android自定义的Uri地址
         Uri selectedImage = data.getData();
         String[] filePathColumn = { MediaStore.Images.Media.DATA };
         // 获取选择照片的数据视图
-        Cursor cursor = getContext().getContentResolver().query(selectedImage,
-                filePathColumn, null, null, null);
+        Cursor cursor = getContext().getContentResolver().query(selectedImage, filePathColumn, null, null, null);
         cursor.moveToFirst();
         // 从数据视图中获取已选择图片的路径
         int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
@@ -186,29 +240,59 @@ public class FragmentMy extends BaseFragment{
             path = picturePath;
         }
     }
-
-    private void init() {
-        item_photo head = new item_photo();
-        head.setphoto_left("头像");
-        head.setType(1);
-        head.setphoto_right(R.mipmap.dc_dj_picking_img_portrait);
-        list1.add(head);
-
-        item_text name = new item_text();
-        item_text department = new item_text();
-        item_text position = new item_text();
-        item_text phone = new item_text();
-        name.settext_left("姓名");
-        name.settext_right("李立昱");
-        department.settext_left("部门");
-        department.settext_right("股东/天虹商场股份有限公司/君尚3019/超市部");
-        position.settext_left("职位");
-        position.settext_right("商场营业员");
-        phone.settext_left("手机号码");
-        phone.settext_right("18822689080");
-        list1.add(name);
-        list1.add(department);
-        list1.add(position);
-        list1.add(phone);
+//    @Override
+//    public void onReflash() {
+//        // TODO Auto-generated method stub\
+//        Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                // TODO Auto-generated method stub
+//                //删除假数据
+//                for(int i=0;i<list1.size();i++){
+//                    item_text info = list1.get(i);
+//                    if (info != null && info.gettext_left() == "接下来写什么好呢") {
+//                        list1.remove(i);
+//                        run();
+//                    }
+//                }
+//                //通知界面显示
+//                showList(list1);
+//                //通知listview 刷新数据完毕；
+////                textlistview.reflashComplete();
+//            }
+//        }, 2000);
+//    }
+    private void showList(List<item_text> list) {
+        if (adapter == null) {
+            listview = (LoadListView) view.findViewById(R.id.my_listview_text);
+//            textlistview.setInterface(this);
+            adapter = new MyTextAdapter(getActivity(), list);
+            listview.setAdapter(adapter);
+        } else {
+            adapter.onDateChange(list);
+        }
+    }
+    @SuppressLint("HandlerLeak")
+    private Handler handler = new Handler(){//假数据
+        @Override
+        public void handleMessage(Message msg){
+            switch (msg.what) {
+                case  1:
+                    //添加数据的方法
+                    item_text entity = new item_text();
+                    entity.settext_left("接下来写什么好呢");
+                    entity.settext_right("好气呀，不知道写啥");
+                    list1.add(entity);
+//                  通知适配器数据已经改变
+                    adapter.notifyDataSetChanged();
+//                  加载完成
+                    listview.setLoadCompleted();
+                    break;
+            }
+        }
+    };
+    public void loadMore() {
+        handler.sendEmptyMessageDelayed(1,2000);
     }
 }

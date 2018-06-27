@@ -49,11 +49,15 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#DADADA"/>
-        <ListView
-            android:id="@+id/my_listview_text"
+        <com.example.administrator.myapplication.refreshListview.RefreshListLayout
+            android:id="@+id/refreshListLayout"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:divider="@null"/>
-
-        </LinearLayout>
+            android:layout_height="match_parent">
+            <com.example.administrator.myapplication.refreshListview.LoadListView
+                android:id="@+id/my_listview_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:divider="@null"/>
+        </com.example.administrator.myapplication.refreshListview.RefreshListLayout>
+    </LinearLayout>
 </LinearLayout>
